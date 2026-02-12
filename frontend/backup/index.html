@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My TODO App</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, textarea { display: block; margin: 10px 0; width: 300px; }
+    button { margin-top: 10px; }
+    ul { list-style-type: none; padding: 0; }
+    li { margin-bottom: 10px; background: #f1f1f1; padding: 10px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>My TODO App</h1>
+
+  <h2>Add New TODO</h2>
+  <input type="text" id="title" placeholder="Title" required />
+  <textarea id="description" placeholder="Description"></textarea>
+  <input type="datetime-local" id="due_time" />
+  <label>
+    <input type="checkbox" id="reminder" />
+    Set Reminder
+  </label>
+  <button onclick="addTodo()">Add TODO</button>
+
+  <h2>Todo List</h2>
+  <ul id="todo-list"></ul>
+  <script>
+    const backendUrl = "http://localhost:5000";
+
+    async function fetchTodos() {
+      const res = await fetch(`${backendUrl}/todos`);
+      const todos = await res.json();
+      const list = document.getElementById("todo-list");
+      list.innerHTML = "";
+      todos.forEach(todo => {
+        const item = document.createElement("li");
+        item.innerHTML = `
+          <strong>${todo.title}</strong><br/>
+          ${todo.description}<br/>
+          Due: ${todo.due_time || "Not set"}<br/>
+          Reminder: ${todo.reminder ? "Yes" : "No"}<br/>
+          Status: ${todo.completed ? "✅ Completed" : "⏳ Pending"}
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    async function addTodo() {
+      const title = document.getElementById("title").value;
+      const description = document.getElementById("description").value;
+      const due_time = document.getElementById("due_time").value;
+      const reminder = document.getElementById("reminder").checked;
+
+      const res = await fetch(`${backendUrl}/todos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description, due_time, reminder })
+      });
+
+      if (res.ok) {
+        document.getElementById("title").value = "";
+        document.getElementById("description").value = "";
+        document.getElementById("due_time").value = "";
+        document.getElementById("reminder").checked = false;
+        fetchTodos();
+      } else {
+        const error = await res.json();
+        alert("Error: " + error.error);
+      }
+    }
+
+    // Initial load
+    fetchTodos();
+  </script>
+</body>
+</html>
